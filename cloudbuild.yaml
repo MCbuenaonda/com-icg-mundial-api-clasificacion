@@ -1,0 +1,17 @@
+steps:
+# Build the Docker image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$TAG_NAME', '.']
+
+# Push the Docker image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/$_REPO_NAME/$_IMAGE_NAME:$TAG_NAME']
+
+# Substitution variables
+substitutions:
+  _REPO_NAME: 'com-icg-mundial-api-clasificacion'  # Replace with your Artifact Registry repository name
+  _IMAGE_NAME: 'com-icg-mundial-api-clasificacion'      # Replace with your desired image name
+  TAG_NAME: 'latest'                           # Default tag, can be overridden
+
+options:
+  logging: CLOUD_LOGGING_ONLY

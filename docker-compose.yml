@@ -1,0 +1,49 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  # Servicio de la Base de Datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mundial
+    ports:
+      # Expone el puerto 3306 a tu máquina local para que puedas conectarte con un cliente como DBeaver o HeidiSQL
+      - "3306:3306"
+    volumes:
+      # Esto guarda los datos de tu BD en tu máquina local para que no se pierdan si el contenedor se detiene
+      - mysql-data:/var/lib/mysql
+    networks:
+      - mi-red
+
+  # Servicio de tu API de Python
+  api:
+    build: . # Le dice a Docker Compose que construya la imagen usando el Dockerfile en el directorio actual
+    container_name: python_api
+    restart: always
+    ports:
+      # Expone el puerto de tu API (ej. 8000) a tu máquina local
+      - "8000:8000"
+    depends_on:
+      - db # Le dice a Docker que espere a que el servicio 'db' esté listo antes de iniciar la API
+    environment:
+      # Aquí está la clave: el host es el nombre del servicio de la base de datos ('db')
+      DB_HOST: db
+      DB_USER: root
+      DB_NAME: mundial
+      DB_PASS: root
+    networks:
+      - mi-red
+
+# Definición de la red que usarán los servicios
+networks:
+  mi-red:
+    driver: bridge
+
+# Definición del volumen para persistir los datos de MySQL
+volumes:
+  mysql-data:
