@@ -64,3 +64,41 @@ def get_juegos_por_estado(estado, logger):
     except Exception as e:
         logger.error(f"Error al obtener los juegos: {str(e)}")
         raise HTTPException(status_code=409, detail=f"Error al obtener los juegos: {str(e)}")
+
+def get_ultimo_juego_confederacion(confederacion_id, logger):
+    """
+    Obtiene el último juego de una confederación específica ordenado por fecha
+    
+    Args:
+        confederacion_id: ID de la confederación
+        logger: Logger para registrar información
+    
+    Returns:
+        dict: Último juego de la confederación o None si no se encuentra
+    """
+    try:
+        logger.info(f"Consultando último juego de la confederación {confederacion_id}")
+        collection = db['juegos']
+        
+        # Buscar el último juego de la confederación ordenado por fecha descendente
+        ultimo_juego = collection.find_one(
+            {'confederacion_id': confederacion_id, 'fecha': {'$exists': True, '$ne': None}},
+            sort=[('fecha', -1)]  # Ordenar por fecha descendente
+        )
+        
+        if ultimo_juego:
+            logger.info(f"Último juego encontrado: {ultimo_juego.get('fecha')} - {ultimo_juego.get('tag', 'Sin tag')}")
+            # Convertir ObjectId a string si existe
+            if '_id' in ultimo_juego:
+                ultimo_juego['_id'] = str(ultimo_juego['_id'])
+            return ultimo_juego
+        else:
+            logger.info(f"No se encontraron juegos para la confederación {confederacion_id}")
+            return None
+            
+    except GoogleAPIError as e:
+        logger.error(f"Error de MongoDB: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error de MongoDB: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error al obtener el último juego de la confederación: {str(e)}")
+        raise HTTPException(status_code=409, detail=f"Error al obtener el último juego de la confederación: {str(e)}")

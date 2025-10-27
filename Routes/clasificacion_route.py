@@ -27,7 +27,7 @@ def verifica_clasificacion(clasificacion: Clasificacion):
         logger.info(f"Inicio del proceso para clasificación del grupo {clasificacion.grupo}")
         response = clasificacion_service.verifica_clasificacion(clasificacion, logger)
         if response:
-            clasificacion_service.verifica_grupos_fase(clasificacion.confederacion_id, clasificacion.fase_id, logger)
+            clasificacion_service.verifica_grupos_fase(clasificacion, logger)
         return response
     except Exception as e:
         logger.error(f"Error al obtener grupo: {str(e)}")
