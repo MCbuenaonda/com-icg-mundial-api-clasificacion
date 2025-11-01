@@ -36,6 +36,105 @@ def clasificados_fase_1(tabla_posiciones, confederacion_id, logger):
     
     return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
 
+def clasificados_fase_2(tabla_posiciones, confederacion_id, logger):
+    """
+    Lógica para determinar los equipos clasificados en la fase 2
+    """
+    clasificados_mundial = []
+    clasificados_ronda = []
+    clasificados_repechaje = []
+    eliminados = []
+    
+    # UEFA 1er lugar de cada grupo califica a tercera ronda, el resto quedan eliminados
+    if confederacion_id == 1:
+        clasificados_ronda.append(tabla_posiciones[0])
+        eliminados.append(tabla_posiciones[1:])
+
+    # CONCACAF, OFC, AFC 1ro y 2do de cada grupo pasa a siguiente ronda, el resto quedan eliminados
+    if confederacion_id == 3 or confederacion_id == 5 or confederacion_id == 6:
+        clasificados_ronda.append(tabla_posiciones[0:2])
+        eliminados.append(tabla_posiciones[2:])
+
+    # CAF 1er lugar de cada grupo califica a tercera ronda, el resto quedan eliminados
+    if confederacion_id == 4:
+        clasificados_ronda.append(tabla_posiciones[0])  # Los siguientes 4 lugares van a la ronda 2
+        eliminados.append(tabla_posiciones[1:])  # Los demás quedan eliminados
+
+    return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
+
+def clasificados_fase_3(tabla_posiciones, confederacion_id, logger):
+    """
+    Lógica para determinar los equipos clasificados en la fase 2
+    """
+    clasificados_mundial = []
+    clasificados_ronda = []
+    clasificados_repechaje = []
+    eliminados = []
+    
+    # UEFA 1er lugar de cada grupo califica a tercera ronda, el resto quedan eliminados
+    if confederacion_id == 1:
+        clasificados_mundial.append(tabla_posiciones[0])
+        eliminados.append(tabla_posiciones[1:])
+
+    # CONCACAF 1ro y 2do de cada grupo pasa a siguiente ronda, el resto quedan eliminados 
+    if confederacion_id == 3:
+        clasificados_mundial.append(tabla_posiciones[0:2])        
+
+    # CAF 1er lugar califica a repechaje, el resto quedan eliminados
+    if confederacion_id == 4:
+        clasificados_repechaje.append(tabla_posiciones[0])  
+        eliminados.append(tabla_posiciones[1:])  # Los demás quedan eliminados
+
+    # OFC 1er lugar califica a siguiente ronda, el resto quedan eliminados
+    if confederacion_id == 5:
+        clasificados_ronda.append(tabla_posiciones[0])  
+        eliminados.append(tabla_posiciones[1:])  # Los demás quedan eliminados
+
+    # AFC 1ro y 2do de cada grupo pasa al mundial, 3er y 4to lugar pasan a siguiente ronda, el resto quedan eliminados
+    if confederacion_id == 6:
+        clasificados_mundial.append(tabla_posiciones[0:2])
+        clasificados_ronda.append(tabla_posiciones[2:4])
+        eliminados.append(tabla_posiciones[4:])
+
+    return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
+
+def clasificados_fase_4(tabla_posiciones, confederacion_id, logger):
+    """
+    Lógica para determinar los equipos clasificados en la fase 2
+    """
+    clasificados_mundial = []
+    clasificados_ronda = []
+    clasificados_repechaje = []
+    eliminados = []
+
+    # OFC 1er lugar califica al mundial, el perdedor a repechaje
+    if confederacion_id == 5:
+        clasificados_mundial.append(tabla_posiciones[0])  
+        clasificados_repechaje.append(tabla_posiciones[1])
+
+    # AFC 1ro de cada grupo pasa al mundial, 2do a siguiente ronda, el resto quedan eliminados
+    if confederacion_id == 6:
+        clasificados_mundial.append(tabla_posiciones[0])
+        clasificados_ronda.append(tabla_posiciones[1])
+        eliminados.append(tabla_posiciones[2:])
+
+    return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
+
+def clasificados_fase_5(tabla_posiciones, confederacion_id, logger):
+    """
+    Lógica para determinar los equipos clasificados en la fase 5
+    """
+    clasificados_mundial = []
+    clasificados_ronda = []
+    clasificados_repechaje = []
+    eliminados = []
+
+    # AFC 1ro de de grupo pasa al repechaje, el resto quedan eliminados
+    if confederacion_id == 6:
+        clasificados_repechaje.append(tabla_posiciones[0])
+        eliminados.append(tabla_posiciones[1])
+
+    return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
 
 def create_grupos(mundial_id, confederacion_id, fase_id, logger):
     clasificado_directo = None
@@ -56,33 +155,42 @@ def create_grupos(mundial_id, confederacion_id, fase_id, logger):
         # Intenta obtener la configuración y asignar las variables
         if confederacion_id in configuraciones_fase_2:
             NUM_GRUPOS, NUM_EQUIPOS = configuraciones_fase_2[confederacion_id]
-        
-        # # UEFA
-        # if confederacion_id == 1: # Reparte a los 16 equipos en 8 grupos: 8 grupos de 2
-        #     NUM_GRUPOS = 8            
-        #     NUM_EQUIPOS = 2
-        
-        # #CONCACAF
-        # if confederacion_id == 3: # Reparte a los 30 equipos en 6 grupos: 6 grupos de 5
-        #     NUM_GRUPOS = 6
-        #     NUM_EQUIPOS = 5
 
-        # # CAF
-        # if confederacion_id == 4: # Reparte a los 4 equipos en 2 grupos: 2 grupos de 2
-        #     NUM_GRUPOS = 2
-        #     NUM_EQUIPOS = 2
+    if fase_id == 3:    
+        # Mapeo de confederacion_id a (NUM_GRUPOS, NUM_EQUIPOS)
+        configuraciones_fase_3 = {
+            1: (4, 2),  # UEFA: 4 grupos de 2
+            3: (3, 4),  # CONCACAF: 3 grupos de 4
+            4: (1, 2),  # CAF: 1 grupo de 2
+            5: (2, 2),  # OFC: 2 grupos de 2
+            6: (3, 6)   # AFC: 3 grupos de 6
+        }
 
-        # # OFC
-        # if confederacion_id == 5: # Reparte a los 8 equipos en 2 grupos: 2 grupos de 4
-        #     NUM_GRUPOS = 2
-        #     NUM_EQUIPOS = 4
-
-        # # AFC
-        # if confederacion_id == 6: # Reparte a los 36 equipos en 6 grupos: 6 grupos de 6
-        #     NUM_GRUPOS = 6
-        #     NUM_EQUIPOS = 6
-        
+        # Intenta obtener la configuración y asignar las variables
+        if confederacion_id in configuraciones_fase_3:
+            NUM_GRUPOS, NUM_EQUIPOS = configuraciones_fase_3[confederacion_id]
     
+    if fase_id == 4:
+        # Mapeo de confederacion_id a (NUM_GRUPOS, NUM_EQUIPOS)
+        configuraciones_fase_4 = {
+            5: (1, 2),  # OFC: 1 grupo de 2
+            6: (2, 3)   # AFC: 2 grupos de 3
+        }
+
+        # Intenta obtener la configuración y asignar las variables
+        if confederacion_id in configuraciones_fase_4:
+            NUM_GRUPOS, NUM_EQUIPOS = configuraciones_fase_4[confederacion_id]
+    
+    if fase_id == 5:
+        # Mapeo de confederacion_id a (NUM_GRUPOS, NUM_EQUIPOS)
+        configuraciones_fase_5 = {
+            6: (1, 2)   # AFC: 1 grupo de 2
+        }
+
+        # Intenta obtener la configuración y asignar las variables
+        if confederacion_id in configuraciones_fase_5:
+            NUM_GRUPOS, NUM_EQUIPOS = configuraciones_fase_5[confederacion_id]
+
     grupos_config = [NUM_EQUIPOS] * NUM_GRUPOS 
 
     # 1. División en 12 grupos

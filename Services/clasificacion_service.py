@@ -16,9 +16,21 @@ def verifica_clasificacion(clasificacion, logger):
     logger.info(f"Generando clasificados para la confederación {clasificacion.confederacion_id} y fase {clasificacion.fase_id}")
     try:
         # Lógica para generar los equipos clasificados
-        if clasificacion.fase_id == 1:
+        if clasificacion.fase_id == 1:            
             clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificacion_util.clasificados_fase_1(clasificacion.paises, clasificacion.confederacion_id, logger)
         
+        if clasificacion.fase_id == 2:
+            clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificacion_util.clasificados_fase_2(clasificacion.paises, clasificacion.confederacion_id, logger)
+
+        if clasificacion.fase_id == 3:
+            clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificacion_util.clasificados_fase_3(clasificacion.paises, clasificacion.confederacion_id, logger)
+
+        if clasificacion.fase_id == 4:
+            clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificacion_util.clasificados_fase_4(clasificacion.paises, clasificacion.confederacion_id, logger)
+        
+        if clasificacion.fase_id == 5:
+            clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificacion_util.clasificados_fase_5(clasificacion.paises, clasificacion.confederacion_id, logger)
+
         ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados, logger)
 
         data = {
@@ -88,10 +100,22 @@ def verifica_grupos_fase(clasificacion, logger):
                 next_fase_id = 2
                 if confederacion_id == 1 or confederacion_id == 4:
                     clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificar_mejores_posicionados(grupos_doc, logger)
-                    ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados)                                    
+                    ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados)
+            elif fase_id == 2:
+                next_fase_id = 3                                                
+            elif fase_id == 3:
+                next_fase_id = 4
+                if confederacion_id == 3:
+                    clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificar_mejores_posicionados(grupos_doc, logger)
+                    ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados)
+            elif fase_id == 4:
+                next_fase_id = 5
+            elif fase_id == 5:
+                return False
 
-                grupos = clasificacion_util.create_grupos(mundial_id, confederacion_id, next_fase_id, logger)
-                resultado_jornadas = clasificacion_util.create_juegos(mundial_id, confederacion_id, grupos, True, next_fase_id, logger)
+            
+            grupos = clasificacion_util.create_grupos(mundial_id, confederacion_id, next_fase_id, logger)
+            resultado_jornadas = clasificacion_util.create_juegos(mundial_id, confederacion_id, grupos, True, next_fase_id, logger)
             
             # Asignar fechas a los juegos por jornada
             juegos_con_fechas = clasificacion_util.asignar_fechas_por_jornada(resultado_jornadas, logger)
@@ -121,6 +145,8 @@ def clasificar_mejores_posicionados(grupos_doc, logger):
         (1, 1): {'posicion_idx': 2, 'num_clasificados': 4, 'destino': clasificados_mundial},
         # CAF: Fase 1, 2do puesto (índice 1), 4 clasificados, a clasificados_ronda
         (1, 4): {'posicion_idx': 1, 'num_clasificados': 4, 'destino': clasificados_ronda},
+        # CONCACAF: Fase 3, 3er puesto (índice 2), 2 clasificados, a clasificados_repechaje
+        (3, 3): {'posicion_idx': 2, 'num_clasificados': 2, 'destino': clasificados_repechaje},
         # Se pueden añadir más lógicas aquí (ej: (1, 3): {...}, (2, 1): {...})
     }
 
@@ -165,61 +191,6 @@ def clasificar_mejores_posicionados(grupos_doc, logger):
 
 
     return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
-
-
-
-
-    # # Lógica para clasificar los países mejor posicionados
-    # if fase_id == 1:
-    #     # UEFA
-    #     if confederacion_id == 1:
-    #         # Debe considerar los mejores terceros lugares
-    #         paises_tercer_puesto = []
-    #         grupos_data = grupos_doc.get('grupos', [])
-
-    #         for nombre_grupo, lista_paises in grupos_data.items():
-    #             # Comprobamos que el grupo tenga al menos 3 países para evitar un IndexError
-    #             if len(lista_paises) >= 3:
-    #                 pais_tercer_puesto = lista_paises[2]
-    #                 paises_tercer_puesto.append(pais_tercer_puesto)
-            
-    #         # 2. Ordenar el array por puntos de mayor a menor
-    #         # Utilizamos la función sorted() con una clave (key) lambda
-    #         paises_ordenados = sorted(
-    #             paises_tercer_puesto, 
-    #             key=lambda pais: pais['puntos'], 
-    #             reverse=True  # 'reverse=True' para ordenar de mayor a menor
-    #         )
-
-    #         clasificados_mundial.append(paises_ordenados[:4])  # Los 4 mejores terceros lugares van al mundial
-    #         eliminados.append(paises_ordenados[4:]) # Los demás quedan eliminados
-    #         eliminados.append(lista_paises[4:]) # Los demás quedan eliminados
-        
-    #     # CAF
-    #     if confederacion_id == 4:
-    #         # Debe considerar los mejores terceros lugares
-    #         paises_segundo_puesto = []
-    #         grupos_data = grupos_doc.get('grupos', [])
-
-    #         for nombre_grupo, lista_paises in grupos_data.items():
-    #             # Comprobamos que el grupo tenga al menos 2 países para evitar un IndexError
-    #             if len(lista_paises) >= 2:
-    #                 pais_segundo_puesto = lista_paises[1]
-    #                 paises_segundo_puesto.append(pais_segundo_puesto)
-
-    #         # 2. Ordenar el array por puntos de mayor a menor
-    #         # Utilizamos la función sorted() con una clave (key) lambda
-    #         paises_ordenados = sorted(
-    #             paises_segundo_puesto, 
-    #             key=lambda pais: pais['puntos'], 
-    #             reverse=True  # 'reverse=True' para ordenar de mayor a menor
-    #         )
-
-    #         clasificados_ronda.append(paises_ordenados[:4])  # Los 4 mejores segundos lugares van a la ronda
-    #         eliminados.append(paises_ordenados[4:]) # Los demás quedan eliminados
-    #         eliminados.append(lista_paises[1:]) # Los demás quedan eliminados
-   
-    # return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
 
 # def create_grupos(grupos_data, logger):
 #     try:
