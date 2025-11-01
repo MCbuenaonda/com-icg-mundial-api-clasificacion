@@ -12,8 +12,16 @@ process_uuid = uuid.uuid4()
 logging.basicConfig(level=logging.INFO, format=f'%(asctime)s - %(levelname)s - {process_uuid} - %(message)s')
 logger = logging.getLogger(__name__)
 
+@route.get("/test")
+def test():
+    try:
+        logger.info(f"Test de Inicio")
+        return "OK"
+    except Exception as e:
+        raise HTTPException(status_code=409, detail=f"Error al simular el partido: {str(e)}")
 
-@route.post("/verifica-clasificacion/", tags=[tag])
+
+@route.post("/verifica-clasificacion", tags=[tag])
 def verifica_clasificacion(clasificacion: Clasificacion):
     """
     Endpoint para obtener el grupo activo, si no existe, crea uno nuevo.

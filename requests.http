@@ -1,10 +1,24 @@
-GET http://127.0.0.1:8103/test
+GET http://127.0.0.1:8103/api/v1/test
 api-key: b480eab3-5544-4a6b-ae34-b5e7e93ead60
 
 ###
-POST http://127.0.0.1:8103/api/v1/verifica-clasificacion
+#POST http://127.0.0.1:8103/api/v1/verifica-clasificacion
+POST https://com-icg-mundial-api-clasificacion-587011279416.us-central1.run.app/api/v1/verifica-clasificacion/
 api-key: b480eab3-5544-4a6b-ae34-b5e7e93ead60
 Content-Type: application/json
+
+{
+  "mundial_id": 1, 
+  "grupo": "Grupo B", 
+  "confederacion_id": 5, 
+  "fase_id": 1, 
+  "paises": [
+    {"_id": "68bb9703033a4535ed96cd30", "id": 152, "nombre": "Papúa Nueva Guinea", "siglas": "PNG", "iso": "PG", "rankin": 1, "puntos": 2, "jj": 2, "jg": 0, "je": 2, "jp": 0, "gf": 7, "gc": 7, "lat": -6, "lng": 147, "federacion": "FEDERACIÓN DE FÚTBOL DE PAPÚA NUEVA GUINEA", "confederacion_id": 5, "valor": 700, "p_ofensiva": 100, "p_defensiva": 100, "p_posesion": 50, "tactica_id": 0, "poder": 135, "efectividad_gol": 35.0, "promedio_gol": 3.5, "user_id": 0, "estadisticas": None, "estado": "disponible"}, 
+    {"_id": "68bb9703033a4535ed96cd3e", "id": 166, "nombre": "Samoa", "siglas": "SAM", "iso": "WS", "rankin": 2, "puntos": 2, "jj": 2, "jg": 0, "je": 2, "jp": 0, "gf": 7, "gc": 7, "lat": -13.58, "lng": -172.33, "federacion": "FEDERACIÓN SAMOANA DE FÚTBOL", "confederacion_id": 5, "valor": 700, "p_ofensiva": 100, "p_defensiva": 100, "p_posesion": 50, "tactica_id": 0, "poder": 135, "efectividad_gol": 35.0, "promedio_gol": 3.5, "user_id": 0, "estadisticas": None, "estado": "disponible"}
+    ]
+}
+
+
 
 {
     "mundial_id": 1,
@@ -76,5 +90,18 @@ Content-Type: application/json
         "estadisticas": null,
         "estado": "disponible"
       }
+    ]
+}
+
+
+
+{
+  "mundial_id": 1, 
+  "grupo": "Grupo B", 
+  "confederacion_id": 5, 
+  "fase_id": 1, 
+  "paises": [
+    {"_id": "68bb9703033a4535ed96cd30", "id": 152, "nombre": "Papúa Nueva Guinea", "siglas": "PNG", "iso": "PG", "rankin": 1, "puntos": 2, "jj": 2, "jg": 0, "je": 2, "jp": 0, "gf": 7, "gc": 7, "lat": -6, "lng": 147, "federacion": "FEDERACIÓN DE FÚTBOL DE PAPÚA NUEVA GUINEA", "confederacion_id": 5, "valor": 700, "p_ofensiva": 100, "p_defensiva": 100, "p_posesion": 50, "tactica_id": 0, "poder": 135, "efectividad_gol": 35.0, "promedio_gol": 3.5, "user_id": 0, "estadisticas": None, "estado": "disponible"}, 
+    {"_id": "68bb9703033a4535ed96cd3e", "id": 166, "nombre": "Samoa", "siglas": "SAM", "iso": "WS", "rankin": 2, "puntos": 2, "jj": 2, "jg": 0, "je": 2, "jp": 0, "gf": 7, "gc": 7, "lat": -13.58, "lng": -172.33, "federacion": "FEDERACIÓN SAMOANA DE FÚTBOL", "confederacion_id": 5, "valor": 700, "p_ofensiva": 100, "p_defensiva": 100, "p_posesion": 50, "tactica_id": 0, "poder": 135, "efectividad_gol": 35.0, "promedio_gol": 3.5, "user_id": 0, "estadisticas": None, "estado": "disponible"}
     ]
 }
