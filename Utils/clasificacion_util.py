@@ -25,15 +25,15 @@ def clasificados_fase_1(tabla_posiciones, confederacion_id, logger):
         clasificados_ronda.append(tabla_posiciones[1])
 
     if confederacion_id == 2:
-        clasificados_mundial.append(tabla_posiciones[:6])  # Los primeros 6 lugares van al mundial
+        clasificados_mundial.extend(tabla_posiciones[:6])  # Los primeros 6 lugares van al mundial
         clasificados_repechaje.append(tabla_posiciones[6]) # El 7mo lugar va al repechaje
-        eliminados.append(tabla_posiciones[7:]) # Los demás quedan eliminados
+        eliminados.extend(tabla_posiciones[7:]) # Los demás quedan eliminados
 
     if confederacion_id == 4:
         clasificados_mundial.append(tabla_posiciones[0])  # El primer lugar va al mundial
-        clasificados_ronda.append(tabla_posiciones[1:5])  # Los siguientes 4 lugares van a la ronda 2
-        eliminados.append(tabla_posiciones[5:])  # Los demás quedan eliminados
-    
+        clasificados_ronda.extend(tabla_posiciones[1:5])  # Los siguientes 4 lugares van a la ronda 2
+        eliminados.extend(tabla_posiciones[5:])  # Los demás quedan eliminados
+
     return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
 
 def clasificados_fase_2(tabla_posiciones, confederacion_id, logger):
@@ -48,17 +48,17 @@ def clasificados_fase_2(tabla_posiciones, confederacion_id, logger):
     # UEFA 1er lugar de cada grupo califica a tercera ronda, el resto quedan eliminados
     if confederacion_id == 1:
         clasificados_ronda.append(tabla_posiciones[0])
-        eliminados.append(tabla_posiciones[1:])
+        eliminados.extend(tabla_posiciones[1:])
 
     # CONCACAF, OFC, AFC 1ro y 2do de cada grupo pasa a siguiente ronda, el resto quedan eliminados
     if confederacion_id == 3 or confederacion_id == 5 or confederacion_id == 6:
-        clasificados_ronda.append(tabla_posiciones[0:2])
-        eliminados.append(tabla_posiciones[2:])
+        clasificados_ronda.extend(tabla_posiciones[0:2])
+        eliminados.extend(tabla_posiciones[2:])
 
     # CAF 1er lugar de cada grupo califica a tercera ronda, el resto quedan eliminados
     if confederacion_id == 4:
         clasificados_ronda.append(tabla_posiciones[0])  # Los siguientes 4 lugares van a la ronda 2
-        eliminados.append(tabla_posiciones[1:])  # Los demás quedan eliminados
+        eliminados.extend(tabla_posiciones[1:])  # Los demás quedan eliminados
 
     return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
 
@@ -74,27 +74,27 @@ def clasificados_fase_3(tabla_posiciones, confederacion_id, logger):
     # UEFA 1er lugar de cada grupo califica a tercera ronda, el resto quedan eliminados
     if confederacion_id == 1:
         clasificados_mundial.append(tabla_posiciones[0])
-        eliminados.append(tabla_posiciones[1:])
+        eliminados.extend(tabla_posiciones[1:])
 
     # CONCACAF 1ro y 2do de cada grupo pasa a siguiente ronda, el resto quedan eliminados 
     if confederacion_id == 3:
-        clasificados_mundial.append(tabla_posiciones[0:2])        
+        clasificados_mundial.extend(tabla_posiciones[0:2])
 
     # CAF 1er lugar califica a repechaje, el resto quedan eliminados
     if confederacion_id == 4:
-        clasificados_repechaje.append(tabla_posiciones[0])  
-        eliminados.append(tabla_posiciones[1:])  # Los demás quedan eliminados
+        clasificados_repechaje.append(tabla_posiciones[0])
+        eliminados.extend(tabla_posiciones[1:])  # Los demás quedan eliminados
 
     # OFC 1er lugar califica a siguiente ronda, el resto quedan eliminados
     if confederacion_id == 5:
-        clasificados_ronda.append(tabla_posiciones[0])  
-        eliminados.append(tabla_posiciones[1:])  # Los demás quedan eliminados
+        clasificados_ronda.append(tabla_posiciones[0])
+        eliminados.extend(tabla_posiciones[1:])  # Los demás quedan eliminados
 
     # AFC 1ro y 2do de cada grupo pasa al mundial, 3er y 4to lugar pasan a siguiente ronda, el resto quedan eliminados
     if confederacion_id == 6:
-        clasificados_mundial.append(tabla_posiciones[0:2])
-        clasificados_ronda.append(tabla_posiciones[2:4])
-        eliminados.append(tabla_posiciones[4:])
+        clasificados_mundial.extend(tabla_posiciones[0:2])
+        clasificados_ronda.extend(tabla_posiciones[2:4])
+        eliminados.extend(tabla_posiciones[4:])
 
     return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
 
@@ -116,7 +116,7 @@ def clasificados_fase_4(tabla_posiciones, confederacion_id, logger):
     if confederacion_id == 6:
         clasificados_mundial.append(tabla_posiciones[0])
         clasificados_ronda.append(tabla_posiciones[1])
-        eliminados.append(tabla_posiciones[2:])
+        eliminados.extend(tabla_posiciones[2:])
 
     return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
 

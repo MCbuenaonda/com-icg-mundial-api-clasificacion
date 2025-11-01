@@ -102,8 +102,9 @@ Configuracion           Equipos Participantes   Formato	                        
 
 CONF_ID     FASE    CHECK
 5           2       OK
+2           2       OK
 3           2       OK
-6           2       X
+6           2       OK
 
 
 

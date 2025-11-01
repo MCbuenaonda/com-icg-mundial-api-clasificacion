@@ -100,14 +100,14 @@ def verifica_grupos_fase(clasificacion, logger):
                 next_fase_id = 2
                 if confederacion_id == 1 or confederacion_id == 4:
                     clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificar_mejores_posicionados(grupos_doc, logger)
-                    ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados)
+                    ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados, logger)
             elif fase_id == 2:
                 next_fase_id = 3                                                
             elif fase_id == 3:
                 next_fase_id = 4
                 if confederacion_id == 3:
                     clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados = clasificar_mejores_posicionados(grupos_doc, logger)
-                    ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados)
+                    ajustar_estados(clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados, logger)
             elif fase_id == 4:
                 next_fase_id = 5
             elif fase_id == 5:
@@ -191,19 +191,3 @@ def clasificar_mejores_posicionados(grupos_doc, logger):
 
 
     return clasificados_mundial, clasificados_ronda, clasificados_repechaje, eliminados
-
-# def create_grupos(grupos_data, logger):
-#     try:
-#         logger.info(f"Creando nuevos Grupos")
-#         collection = db['grupos']
-#         # Inserta el nuevo documento en la colección
-#         resultado = collection.insert_one(grupos_data)
-#         grupos_data['_id'] = str(resultado.inserted_id)
-#         logger.info(f"Grupo creado exitosamente con ID: {resultado.inserted_id}")
-#         return {"_id": str(resultado.inserted_id), **grupos_data}
-#     except GoogleAPIError as e:
-#         logger.error(f"Error de Mongo DB: {str(e)}")
-#         raise HTTPException(status_code=500, detail=f"Error de Mongo DB: {str(e)}")
-#     except Exception as e:
-#         logger.error(f"Error al crear el grupo: {str(e)}")
-#         raise HTTPException(status_code=409, detail=f"Error al crear el grupo: {str(e)}")
