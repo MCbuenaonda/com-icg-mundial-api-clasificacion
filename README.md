@@ -98,3 +98,29 @@ Configuracion           Equipos Participantes   Formato	                        
 - Tercera Ronda (Grupos)
 Configuracion           Equipos Participantes   Formato	                        Resultado
 4 Grupos de 2 equipos   8 equipos               partidos de ida y vuelta	    1er lugar califica al mundial
+
+
+CONF_ID     FASE    CHECK
+5           2       OK
+3           2       OK
+6           2       X
+
+
+
+# AJUSTES
+- ajustar fecha de inicio para las fases 2 en adelante dentro de la creacion de partidos
+
+# NUEVOS FEATURES
+- vista para Calendario con los juegos
+- vista para los paises participantes
+- vista para los jugadores participantes
+- vista para la historia de los mundiales y estadisticas
+- ajuste para comentaristas para antes y despues de un juego
+- inclusion de modalidad para interaccion con usuario
+- ajuste de login
+- ajuste para perfil de usuario
+- ajuste para guardar datos de acciones por jugador
+- agregar boton para mostrar historial de juego entre dos selecciones
+- hacer la logica para verificar si un partido es un "clasico"
+
+

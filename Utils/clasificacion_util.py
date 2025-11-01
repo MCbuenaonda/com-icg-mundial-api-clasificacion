@@ -149,7 +149,7 @@ def create_grupos(mundial_id, confederacion_id, fase_id, logger):
             3: (6, 5),  # CONCACAF: 6 grupos de 5
             4: (2, 2),  # CAF: 2 grupos de 2
             5: (2, 4),  # OFC: 2 grupos de 4
-            6: (6, 6)   # AFC: 6 grupos de 6
+            6: (9, 4)   # AFC: 9 grupos de 4
         }
 
         # Intenta obtener la configuración y asignar las variables
