@@ -118,7 +118,7 @@ def verifica_grupos_fase(clasificacion, logger):
             resultado_jornadas = clasificacion_util.create_juegos(mundial_id, confederacion_id, grupos, True, next_fase_id, logger)
             
             # Asignar fechas a los juegos por jornada
-            juegos_con_fechas = clasificacion_util.asignar_fechas_por_jornada(resultado_jornadas, logger)
+            juegos_con_fechas = clasificacion_util.asignar_fechas_por_jornada(resultado_jornadas, confederacion_id, logger)
             # Guardar los juegos con fechas en MongoDB
             juegos = juegos_con_fechas.get('juegos')
             juegos_service.create_juegos(juegos, logger)

@@ -116,11 +116,7 @@ CONF_ID     FASE    CHECK
 - vista para los paises participantes
 - vista para los jugadores participantes
 - vista para la historia de los mundiales y estadisticas
-- ajuste para comentaristas para antes y despues de un juego
 - inclusion de modalidad para interaccion con usuario
-- ajuste de login
-- ajuste para perfil de usuario
-- ajuste para guardar datos de acciones por jugador
 - agregar boton para mostrar historial de juego entre dos selecciones
 - hacer la logica para verificar si un partido es un "clasico"
 

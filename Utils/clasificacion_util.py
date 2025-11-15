@@ -218,7 +218,6 @@ def create_grupos(mundial_id, confederacion_id, fase_id, logger):
     # Retornar la estructura completa incluyendo el confederacion_id
     return documento_grupos
 
-
 def create_juegos(mundial_id, confederacion_id, grupos_doc, ida_y_vuelta=False, fase_id=None, logger=None):
     jornadas = {}
     juegos_creados = []
@@ -257,7 +256,6 @@ def create_juegos(mundial_id, confederacion_id, grupos_doc, ida_y_vuelta=False, 
         "total_jornadas": len(jornadas),
         "total_juegos": len(juegos_creados)
     }    
-
 
 def generar_fixture_grupo(mundial_id, equipos, grupo_name, confederacion_id, ida_y_vuelta, logger):
     """
@@ -414,8 +412,7 @@ def asignar_partidos_a_jornadas(partidos, jornada_inicial):
     
     return jornadas
 
-
-def asignar_fechas_por_jornada(resultado_jornadas, logger):
+def asignar_fechas_por_jornada(resultado_jornadas, confederacion_id, logger):
     """
     Asigna fechas a los juegos organizados por jornada con distribución inteligente por confederación.
     Cada confederación tiene sus propias jornadas y variaciones de días específicas.
@@ -427,27 +424,9 @@ def asignar_fechas_por_jornada(resultado_jornadas, logger):
     Returns:
         dict: Estructura actualizada con fechas asignadas
     """
-    # Obtener la confederación del primer juego para determinar la fecha de inicio
-    confederacion_id = None
-    if resultado_jornadas['juegos']:
-        confederacion_id = resultado_jornadas['juegos'][0].get('confederacion_id')
-    
-    # Obtener la fecha del último juego de esta confederación desde la base de datos
-    fecha_inicio = datetime(1896, 1, 7)  # Fecha por defecto
-    if confederacion_id:
-        try:
-            # Buscar el último juego de esta confederación ordenado por fecha descendente
-            ultimo_juego = juegos_service.get_ultimo_juego_confederacion(confederacion_id, logger)
-            if ultimo_juego and ultimo_juego.get('fecha'):
-                # Convertir la fecha string a datetime y agregar algunos días de separación
-                fecha_ultimo_juego = datetime.strptime(ultimo_juego['fecha'], '%Y-%m-%d')
-                fecha_inicio = fecha_ultimo_juego + timedelta(days=7)  # Iniciar 7 días después del último juego
-                logger.info(f"Fecha de inicio calculada desde último juego de confederación {confederacion_id}: {fecha_inicio.strftime('%Y-%m-%d')}")
-            else:
-                logger.info(f"No se encontraron juegos previos para confederación {confederacion_id}, usando fecha por defecto")
-        except Exception as e:
-            logger.warning(f"Error al obtener último juego de confederación {confederacion_id}: {str(e)}, usando fecha por defecto")
-    
+    # Fechas del torneo
+    ultima_fecha = obtener_ultima_fecha(confederacion_id, logger)
+    fecha_inicio = datetime.strptime(ultima_fecha, '%Y-%m-%d')    
     fecha_fin = datetime(1899, 12, 31)
     dias_totales = (fecha_fin - fecha_inicio).days
     
@@ -469,48 +448,42 @@ def asignar_fechas_por_jornada(resultado_jornadas, logger):
     
     logger.info(f"Distribuyendo fechas desde {fecha_inicio.strftime('%Y-%m-%d')} hasta {fecha_fin.strftime('%Y-%m-%d')}")
     
-    # Configuración específica por confederación
+    # Configuración específica por confederación con rangos de días personalizados
     confederaciones_info = {
         1: {  # UEFA (55 equipos en 12 grupos: 7 grupos de 5 + 5 grupos de 4)
             "nombre": "UEFA", 
             "peso": 0.30,      # 30% del tiempo total
-            "dias_entre_jornadas": 14,  # 14 días entre jornadas
-            "variacion_dias": 5,        # ±5 días de variación
+            "rango_dias": 5,   # Rango de 5 días para asignar fechas a partidos
             "descripcion": "7 grupos de 5 equipos (8 jornadas) + 5 grupos de 4 equipos (6 jornadas)"
         },
         2: {  # CONMEBOL (10 equipos en 1 grupo de 10)
             "nombre": "CONMEBOL", 
             "peso": 0.15,      # 15% del tiempo
-            "dias_entre_jornadas": 21,  # 21 días entre jornadas (más espaciado)
-            "variacion_dias": 4,        # ±4 días de variación
+            "rango_dias": 12,  # Rango de 12 días para asignar fechas a partidos
             "descripcion": "1 grupo de 10 equipos (18 jornadas ida y vuelta)"
         },
         3: {  # CONCACAF (10 equipos en 5 grupos de 2)
             "nombre": "CONCACAF", 
             "peso": 0.08,      # 8% del tiempo
-            "dias_entre_jornadas": 7,   # 7 días entre jornadas (rápido)
-            "variacion_dias": 2,        # ±2 días de variación
+            "rango_dias": 6,   # Rango de 6 días para asignar fechas a partidos
             "descripcion": "5 grupos de 2 equipos (2 jornadas ida y vuelta cada grupo)"
         },
         4: {  # CAF (54 equipos en 9 grupos de 6)
             "nombre": "CAF", 
             "peso": 0.25,      # 25% del tiempo
-            "dias_entre_jornadas": 12,  # 12 días entre jornadas
-            "variacion_dias": 4,        # ±4 días de variación
+            "rango_dias": 4,   # Rango de 4 días para asignar fechas a partidos
             "descripcion": "9 grupos de 6 equipos (10 jornadas ida y vuelta cada grupo)"
         },
         5: {  # OFC (4 equipos en 2 grupos de 2)
             "nombre": "OFC", 
             "peso": 0.05,      # 5% del tiempo
-            "dias_entre_jornadas": 10,  # 10 días entre jornadas
-            "variacion_dias": 3,        # ±3 días de variación
+            "rango_dias": 30,  # Rango de 30 días para asignar fechas a partidos
             "descripcion": "2 grupos de 2 equipos (2 jornadas ida y vuelta cada grupo)"
         },
         6: {  # AFC (20 equipos en 10 grupos de 2)
             "nombre": "AFC", 
             "peso": 0.17,      # 17% del tiempo
-            "dias_entre_jornadas": 8,   # 8 días entre jornadas
-            "variacion_dias": 3,        # ±3 días de variación
+            "rango_dias": 5,   # Rango de 5 días para asignar fechas a partidos
             "descripcion": "10 grupos de 2 equipos (2 jornadas ida y vuelta cada grupo)"
         }
     }
@@ -528,20 +501,21 @@ def asignar_fechas_por_jornada(resultado_jornadas, logger):
         # Obtener configuración específica de la confederación
         config_conf = confederaciones_info[confederacion_id]
         peso_confederacion = config_conf["peso"]
-        dias_entre_jornadas = config_conf["dias_entre_jornadas"]
-        variacion_dias = config_conf["variacion_dias"]
+        rango_dias = config_conf["rango_dias"]
         
         # Calcular días disponibles para esta confederación
         dias_confederacion = int(dias_totales * peso_confederacion)
         
-        # Ajustar días entre jornadas si el período asignado es muy corto
+        # Calcular días entre jornadas basado en el rango de días configurado
         if num_jornadas > 1:
-            dias_maximos_entre_jornadas = dias_confederacion // (num_jornadas - 1)
-            dias_entre_jornadas = min(dias_entre_jornadas, dias_maximos_entre_jornadas)
-            dias_entre_jornadas = max(5, dias_entre_jornadas)  # Mínimo 5 días
+            # El espacio entre jornadas debe ser suficiente para el rango de días
+            dias_entre_jornadas = max(rango_dias + 2, dias_confederacion // (num_jornadas - 1))
+            dias_entre_jornadas = max(rango_dias + 1, dias_entre_jornadas)  # Mínimo: rango + 1 día
+        else:
+            dias_entre_jornadas = rango_dias
         
         conf_nombre = config_conf["nombre"]
-        logger.info(f"Confederación {conf_nombre}: {num_jornadas} jornadas, {dias_entre_jornadas} días entre jornadas, ±{variacion_dias} días variación")
+        logger.info(f"Confederación {conf_nombre}: {num_jornadas} jornadas, {dias_entre_jornadas} días entre jornadas, rango de {rango_dias} días")
         logger.info(f"  Configuración: {config_conf['descripcion']}")
         
         # Asignar fechas y horas a las jornadas de esta confederación
@@ -549,16 +523,16 @@ def asignar_fechas_por_jornada(resultado_jornadas, logger):
             fecha_base = fecha_actual + timedelta(days=i * dias_entre_jornadas)
             partidos_jornada = resultado_jornadas['jornadas'][jornada_nombre]
             
-            # Asignar fechas variables y horarios a cada partido con variación específica de la confederación
+            # Asignar fechas variables y horarios a cada partido con rango específico de la confederación
             partidos_con_horarios = asignar_fechas_y_horarios_distribuidos(
-                partidos_jornada, fecha_base, variacion_dias, conf_nombre, logger
+                partidos_jornada, fecha_base, rango_dias, conf_nombre, logger
             )
             
             # Actualizar los partidos en la jornada
             resultado_jornadas['jornadas'][jornada_nombre] = partidos_con_horarios
             
             fecha_str = fecha_base.strftime("%Y-%m-%d")
-            logger.info(f"  {jornada_nombre} ({conf_nombre}): {fecha_str} (±{variacion_dias} días) - {len(partidos_con_horarios)} partidos distribuidos")
+            logger.info(f"  {jornada_nombre} ({conf_nombre}): {fecha_str} (rango: {rango_dias} días) - {len(partidos_con_horarios)} partidos distribuidos")
         
         # Mover la fecha actual al final del período de esta confederación
         fecha_actual += timedelta(days=dias_confederacion)
@@ -589,15 +563,15 @@ def asignar_fechas_por_jornada(resultado_jornadas, logger):
     
     return resultado_jornadas
 
-def asignar_fechas_y_horarios_distribuidos(partidos, fecha_base, variacion_dias, conf_nombre, logger):
+def asignar_fechas_y_horarios_distribuidos(partidos, fecha_base, rango_dias, conf_nombre, logger):
     """
     Asigna fechas variables y horarios diferentes a partidos para distribuir la carga.
-    Cada confederación tiene su propia variación de días configurada.
+    Cada confederación tiene su propio rango de días configurado.
     
     Args:
         partidos: Lista de partidos de una jornada
         fecha_base: Fecha base (datetime) para los partidos
-        variacion_dias: Número de días de variación específico de la confederación
+        rango_dias: Número de días de rango para distribuir los partidos de esta confederación
         conf_nombre: Nombre de la confederación para logs
         logger: Logger para registrar información
     
@@ -643,12 +617,13 @@ def asignar_fechas_y_horarios_distribuidos(partidos, fecha_base, variacion_dias,
     partidos_distribuidos = []
     fechas_usadas = {}  # Contador de partidos por fecha
     
-    logger.info(f"Distribuyendo {len(partidos)} partidos para {conf_nombre} con variación de ±{variacion_dias} días")
+    logger.info(f"Distribuyendo {len(partidos)} partidos para {conf_nombre} con rango de {rango_dias} días")
     
     for i, partido in enumerate(partidos):
-        # Generar variación de fecha específica de la confederación
-        variacion_aplicada = random.randint(-variacion_dias, variacion_dias)
-        fecha_partido = fecha_base + timedelta(days=variacion_aplicada)
+        # Generar fecha dentro del rango de días configurado para la confederación
+        # Distribución entre 0 y rango_dias (ejemplo: UEFA de 0 a 5 días, CONMEBOL de 0 a 12 días)
+        dias_offset = random.randint(0, rango_dias)
+        fecha_partido = fecha_base + timedelta(days=dias_offset)
         fecha_str = fecha_partido.strftime("%Y-%m-%d")
         
         # Contar cuántos partidos ya están programados para esta fecha
@@ -657,13 +632,13 @@ def asignar_fechas_y_horarios_distribuidos(partidos, fecha_base, variacion_dias,
         
         partidos_del_dia = fechas_usadas[fecha_str]
         
-        # Si ya hay muchos partidos ese día (más de 6), intentar otra fecha
+        # Si ya hay muchos partidos ese día, intentar otra fecha dentro del rango
         intentos = 0
         max_partidos_por_dia = 8 if conf_nombre in ["UEFA", "CAF"] else 6  # UEFA y CAF pueden tener más partidos por día
         
         while partidos_del_dia >= max_partidos_por_dia and intentos < 15:
-            variacion_aplicada = random.randint(-variacion_dias, variacion_dias)
-            fecha_partido = fecha_base + timedelta(days=variacion_aplicada)
+            dias_offset = random.randint(0, rango_dias)
+            fecha_partido = fecha_base + timedelta(days=dias_offset)
             fecha_str = fecha_partido.strftime("%Y-%m-%d")
             
             if fecha_str not in fechas_usadas:
@@ -688,7 +663,7 @@ def asignar_fechas_y_horarios_distribuidos(partidos, fecha_base, variacion_dias,
         partido_actualizado['hora'] = horario
         partido_actualizado['fecha_completa'] = fecha_hora.isoformat()
         partido_actualizado['fecha_hora_str'] = fecha_hora.strftime("%Y-%m-%d %H:%M")
-        partido_actualizado['variacion_dias'] = variacion_aplicada  # Para debugging
+        partido_actualizado['dias_offset'] = dias_offset  # Para debugging - días desde la fecha base
         partido_actualizado['confederacion_nombre'] = conf_nombre  # Para identificación
         
         partidos_distribuidos.append(partido_actualizado)
@@ -699,6 +674,15 @@ def asignar_fechas_y_horarios_distribuidos(partidos, fecha_base, variacion_dias,
     
     logger.info(f"{conf_nombre}: {len(partidos)} partidos distribuidos en {total_fechas_utilizadas} fechas")
     logger.info(f"{conf_nombre}: Promedio {promedio_partidos_por_fecha:.1f} partidos por fecha")
-    logger.info(f"{conf_nombre}: Distribución por fechas: {dict(sorted(fechas_usadas.items()))}")
+    logger.info(f"{conf_nombre}: Rango utilizado: 0 a {rango_dias} días desde fecha base")
     
     return partidos_distribuidos
+
+def obtener_ultima_fecha(confederacion_id, logger):
+    """
+    Obtiene la última fecha de los juegos programados.
+    """
+    ultimo_juego = juegos_service.get_ultimo_juego_confederacion(confederacion_id, logger)
+    ultima_fecha = ultimo_juego.get('fecha', None) if ultimo_juego else None
+    logger.info(f"Última fecha para confederación {confederacion_id}: {ultima_fecha}")
+    return ultima_fecha
