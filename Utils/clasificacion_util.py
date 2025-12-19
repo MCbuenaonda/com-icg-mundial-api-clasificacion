@@ -231,24 +231,24 @@ def create_juegos(mundial_id, confederacion_id, grupos_doc, ida_y_vuelta=False, 
         fixture_grupo = generar_fixture_grupo(mundial_id, equipos, grupo_name, confederacion_id, ida_y_vuelta, logger)
             
         # Organizar por jornadas
-        jornadas_grupo = organizar_por_jornadas(fixture_grupo, num_equipos, ida_y_vuelta)
+        # jornadas_grupo = organizar_por_jornadas(fixture_grupo, num_equipos, ida_y_vuelta)
             
-        # Agregar las jornadas al diccionario principal
-        for jornada_num, partidos in jornadas_grupo.items():
-            if jornada_num not in jornadas:
-                jornadas[jornada_num] = []
-            jornadas[jornada_num].extend(partidos)
+        # # Agregar las jornadas al diccionario principal
+        # for jornada_num, partidos in jornadas_grupo.items():
+        #     if jornada_num not in jornadas:
+        #         jornadas[jornada_num] = []
+        #     jornadas[jornada_num].extend(partidos)
                 
         # Agregar todos los juegos con jornada asignada a la lista completa
-        for jornada_nombre, partidos in jornadas_grupo.items():
-            for partido in partidos:
-                partido['fase_id'] = fase_id
-                # Ya tienen el atributo 'jornada' asignado en asignar_partidos_a_jornadas
-                juegos_creados.append(partido)
+        for partido in fixture_grupo:
+            partido['fase_id'] = fase_id
+            # Ya tienen el atributo 'jornada' asignado en asignar_partidos_a_jornadas
+            juegos_creados.append(partido)
+            
     
     
     # Log de resumen
-    logger.info(f"Se crearon {len(juegos_creados)} juegos distribuidos en {len(jornadas)} jornadas")
+    #logger.info(f"Se crearon {len(juegos_creados)} juegos distribuidos en {len(jornadas)} jornadas")
     
     return {
         "jornadas": jornadas,
@@ -263,52 +263,51 @@ def generar_fixture_grupo(mundial_id, equipos, grupo_name, confederacion_id, ida
     """
     fixture = []
     num_equipos = len(equipos)
-    
-    for i in range(num_equipos):
-        for j in range(i + 1, num_equipos):
-            # Alternar quién es local/visitante basado en la posición
-            if (i + j) % 2 == 0:
-                equipo_local = equipos[i]
-                equipo_visitante = equipos[j]
-            else:
-                equipo_local = equipos[j]
-                equipo_visitante = equipos[i]
-            
-            # Crear juego de ida
-            juego_ida = {
-                "mundial_id": mundial_id,
-                "grupo": grupo_name,
-                "confederacion_id": confederacion_id,
-                "equipo_local": equipo_local,
-                "equipo_visitante": equipo_visitante,
-                "tipo": "ida" if ida_y_vuelta else "unico",
-                "fecha": None,
-                "resultado": None,
-                "estado": "pendiente",
-                "tag": f"#{equipo_local['siglas']}{equipo_visitante['siglas']}"
-            }
-            
-            fixture.append(juego_ida)
-            logger.info(f"Juego {'de ida' if ida_y_vuelta else ''}: {equipo_local['nombre']} (Local) vs {equipo_visitante['nombre']} (Visitante)")
-            
-            # Si se requieren juegos de ida y vuelta
-            if ida_y_vuelta:
-                juego_vuelta = {
-                    "mundial_id": mundial_id,
-                    "grupo": grupo_name,
-                    "confederacion_id": confederacion_id,
-                    "equipo_local": equipo_visitante,
-                    "equipo_visitante": equipo_local,
-                    "tipo": "vuelta",
-                    "fecha": None,
-                    "resultado": None,
-                    "estado": "pendiente",
-                    "tag": f"#{equipo_local['siglas']}{equipo_visitante['siglas']}"
-                }
-                
-                fixture.append(juego_vuelta)
-                logger.info(f"Juego de vuelta: {equipo_visitante['nombre']} (Local) vs {equipo_local['nombre']} (Visitante)")
-    
+    cat_jornadas = grupos_service.get_catalogo_jornadas(num_equipos, logger)
+
+    tipo_juego = "ida" if ida_y_vuelta else "unico"
+
+    for jornada in cat_jornadas:
+        logger.info(f"Procesando Jornada ID: {jornada['jornada_id']}")
+
+        # Iteramos de 2 en 2 para cubrir los pares (1,2), (3,4), etc.
+        for i in range(1, num_equipos + 1, 2):
+            key_local = f'pos{i}'
+            key_visitante = f'pos{i+1}'
+
+            # Verificamos si las llaves existen en el objeto jornada
+            if key_local in jornada and key_visitante in jornada:
+                idx_local = jornada[key_local]
+                idx_visitante = jornada[key_visitante]
+
+                # Validamos que los índices existan en nuestra lista de equipos
+                if idx_local < num_equipos and idx_visitante < num_equipos:
+                    equipo_local = equipos[idx_local]
+                    equipo_visitante = equipos[idx_visitante]
+
+                    # Si es ida y vuelta, verificamos si ya pasamos la mitad de las jornadas
+                    if ida_y_vuelta:
+                        limite = 1 if num_equipos == 2 else (num_equipos - 1 if num_equipos % 2 == 0 else num_equipos)
+                        if jornada['jornada_id'] > limite:
+                            tipo_juego = "vuelta"
+
+                    juego = {
+                        "mundial_id": mundial_id,
+                        "grupo": grupo_name,
+                        "confederacion_id": confederacion_id,
+                        "equipo_local": equipo_local,
+                        "equipo_visitante": equipo_visitante,
+                        "tipo": tipo_juego,
+                        "fecha": None,
+                        "resultado": None,
+                        "estado": "pendiente",
+                        "jornada": f"Jornada {jornada['jornada_id']}",
+                        "tag": f"#{equipo_local['siglas']}{equipo_visitante['siglas']}"
+                    }
+
+                    fixture.append(juego)
+                    logger.info(f"Juego {tipo_juego}: {equipo_local['nombre']} vs {equipo_visitante['nombre']}")
+
     return fixture
 
 def organizar_por_jornadas(fixture, num_equipos, ida_y_vuelta):
@@ -414,8 +413,10 @@ def asignar_partidos_a_jornadas(partidos, jornada_inicial):
 
 def asignar_fechas_por_jornada(resultado_jornadas, confederacion_id, logger):
     """
-    Asigna fechas a los juegos organizados por jornada con distribución inteligente por confederación.
-    Cada confederación tiene sus propias jornadas y variaciones de días específicas.
+    Asigna fechas a los juegos según su número de jornada y configuración de confederación.
+    - Todas las jornadas 1 inician desde la fecha base (±2 días)
+    - Cada confederación tiene su ritmo de días entre jornadas
+    - Cada fecha tiene variación de ±2 días para distribuir partidos
     
     Args:
         resultado_jornadas: Diccionario con estructura {jornadas: {...}, juegos: [...]}
@@ -427,256 +428,156 @@ def asignar_fechas_por_jornada(resultado_jornadas, confederacion_id, logger):
     # Fechas del torneo
     ultima_fecha = obtener_ultima_fecha(confederacion_id, logger)
     fecha_inicio = datetime.strptime(ultima_fecha, '%Y-%m-%d')    
-    fecha_fin = datetime(1899, 12, 31)
-    dias_totales = (fecha_fin - fecha_inicio).days
     
-    # Agrupar jornadas por confederación
-    jornadas_por_confederacion = {}
+    logger.info(f"Fecha inicio base del torneo: {fecha_inicio.strftime('%Y-%m-%d')}")
     
-    for jornada_nombre, partidos in resultado_jornadas['jornadas'].items():
-        if partidos:  # Si hay partidos en esta jornada
-            confederacion_id = partidos[0].get('confederacion_id')
-            if confederacion_id not in jornadas_por_confederacion:
-                jornadas_por_confederacion[confederacion_id] = []
-            jornadas_por_confederacion[confederacion_id].append(jornada_nombre)
-    
-    # Ordenar jornadas por número dentro de cada confederación
-    for confederacion_id in jornadas_por_confederacion:
-        jornadas_por_confederacion[confederacion_id].sort(
-            key=lambda x: int(x.split()[1])
-        )
-    
-    logger.info(f"Distribuyendo fechas desde {fecha_inicio.strftime('%Y-%m-%d')} hasta {fecha_fin.strftime('%Y-%m-%d')}")
-    
-    # Configuración específica por confederación con rangos de días personalizados
-    confederaciones_info = {
-        1: {  # UEFA (55 equipos en 12 grupos: 7 grupos de 5 + 5 grupos de 4)
-            "nombre": "UEFA", 
-            "peso": 0.30,      # 30% del tiempo total
-            "rango_dias": 5,   # Rango de 5 días para asignar fechas a partidos
-            "descripcion": "7 grupos de 5 equipos (8 jornadas) + 5 grupos de 4 equipos (6 jornadas)"
-        },
-        2: {  # CONMEBOL (10 equipos en 1 grupo de 10)
-            "nombre": "CONMEBOL", 
-            "peso": 0.15,      # 15% del tiempo
-            "rango_dias": 12,  # Rango de 12 días para asignar fechas a partidos
-            "descripcion": "1 grupo de 10 equipos (18 jornadas ida y vuelta)"
-        },
-        3: {  # CONCACAF (10 equipos en 5 grupos de 2)
-            "nombre": "CONCACAF", 
-            "peso": 0.08,      # 8% del tiempo
-            "rango_dias": 6,   # Rango de 6 días para asignar fechas a partidos
-            "descripcion": "5 grupos de 2 equipos (2 jornadas ida y vuelta cada grupo)"
-        },
-        4: {  # CAF (54 equipos en 9 grupos de 6)
-            "nombre": "CAF", 
-            "peso": 0.25,      # 25% del tiempo
-            "rango_dias": 4,   # Rango de 4 días para asignar fechas a partidos
-            "descripcion": "9 grupos de 6 equipos (10 jornadas ida y vuelta cada grupo)"
-        },
-        5: {  # OFC (4 equipos en 2 grupos de 2)
-            "nombre": "OFC", 
-            "peso": 0.05,      # 5% del tiempo
-            "rango_dias": 30,  # Rango de 30 días para asignar fechas a partidos
-            "descripcion": "2 grupos de 2 equipos (2 jornadas ida y vuelta cada grupo)"
-        },
-        6: {  # AFC (20 equipos en 10 grupos de 2)
-            "nombre": "AFC", 
-            "peso": 0.17,      # 17% del tiempo
-            "rango_dias": 5,   # Rango de 5 días para asignar fechas a partidos
-            "descripcion": "10 grupos de 2 equipos (2 jornadas ida y vuelta cada grupo)"
-        }
+    # Configuración de días entre jornadas por confederación
+    confederaciones_config = {
+        1: {"nombre": "UEFA", "dias_entre_jornadas": 7},           # 7 días entre jornadas
+        2: {"nombre": "CONMEBOL", "dias_entre_jornadas": 10},      # 10 días entre jornadas
+        3: {"nombre": "CONCACAF", "dias_entre_jornadas": 14},      # 14 días entre jornadas
+        4: {"nombre": "CAF", "dias_entre_jornadas": 6},            # 6 días entre jornadas
+        5: {"nombre": "OFC", "dias_entre_jornadas": 30},           # 30 días entre jornadas
+        6: {"nombre": "AFC", "dias_entre_jornadas": 8}             # 8 días entre jornadas
     }
     
-    fecha_actual = fecha_inicio
+    # Agrupar juegos por confederación y jornada
+    juegos_por_confederacion = {}
     
-    # Procesar cada confederación secuencialmente
-    for confederacion_id in sorted(jornadas_por_confederacion.keys()):
-        jornadas_conf = jornadas_por_confederacion[confederacion_id]
-        num_jornadas = len(jornadas_conf)
-        
-        if num_jornadas == 0:
-            continue
-            
-        # Obtener configuración específica de la confederación
-        config_conf = confederaciones_info[confederacion_id]
-        peso_confederacion = config_conf["peso"]
-        rango_dias = config_conf["rango_dias"]
-        
-        # Calcular días disponibles para esta confederación
-        dias_confederacion = int(dias_totales * peso_confederacion)
-        
-        # Calcular días entre jornadas basado en el rango de días configurado
-        if num_jornadas > 1:
-            # El espacio entre jornadas debe ser suficiente para el rango de días
-            dias_entre_jornadas = max(rango_dias + 2, dias_confederacion // (num_jornadas - 1))
-            dias_entre_jornadas = max(rango_dias + 1, dias_entre_jornadas)  # Mínimo: rango + 1 día
-        else:
-            dias_entre_jornadas = rango_dias
-        
-        conf_nombre = config_conf["nombre"]
-        logger.info(f"Confederación {conf_nombre}: {num_jornadas} jornadas, {dias_entre_jornadas} días entre jornadas, rango de {rango_dias} días")
-        logger.info(f"  Configuración: {config_conf['descripcion']}")
-        
-        # Asignar fechas y horas a las jornadas de esta confederación
-        for i, jornada_nombre in enumerate(jornadas_conf):
-            fecha_base = fecha_actual + timedelta(days=i * dias_entre_jornadas)
-            partidos_jornada = resultado_jornadas['jornadas'][jornada_nombre]
-            
-            # Asignar fechas variables y horarios a cada partido con rango específico de la confederación
-            partidos_con_horarios = asignar_fechas_y_horarios_distribuidos(
-                partidos_jornada, fecha_base, rango_dias, conf_nombre, logger
-            )
-            
-            # Actualizar los partidos en la jornada
-            resultado_jornadas['jornadas'][jornada_nombre] = partidos_con_horarios
-            
-            fecha_str = fecha_base.strftime("%Y-%m-%d")
-            logger.info(f"  {jornada_nombre} ({conf_nombre}): {fecha_str} (rango: {rango_dias} días) - {len(partidos_con_horarios)} partidos distribuidos")
-        
-        # Mover la fecha actual al final del período de esta confederación
-        fecha_actual += timedelta(days=dias_confederacion)
-        logger.info(f"Confederación {conf_nombre} finalizada. Próxima fecha disponible: {fecha_actual.strftime('%Y-%m-%d')}")
-    
-    # También actualizar las fechas y horas en el array completo de juegos
     for juego in resultado_jornadas['juegos']:
-        jornada_juego = juego.get('jornada')
-        if jornada_juego in resultado_jornadas['jornadas']:
-            # Buscar el partido correspondiente en la jornada actualizada
-            partidos_jornada = resultado_jornadas['jornadas'][jornada_juego]
+        confederacion_id = juego.get('confederacion_id')
+        jornada_str = juego.get('jornada', '')
+        
+        if not confederacion_id or not jornada_str:
+            continue
+        
+        # Extraer el número de jornada (ej: "Jornada 1" -> 1)
+        try:
+            num_jornada = int(jornada_str.split()[1])
+        except (IndexError, ValueError):
+            logger.warning(f"No se pudo extraer número de jornada de: {jornada_str}")
+            continue
+        
+        if confederacion_id not in juegos_por_confederacion:
+            juegos_por_confederacion[confederacion_id] = {}
+        
+        if num_jornada not in juegos_por_confederacion[confederacion_id]:
+            juegos_por_confederacion[confederacion_id][num_jornada] = []
+        
+        juegos_por_confederacion[confederacion_id][num_jornada].append(juego)
+    
+    logger.info(f"Procesando {len(juegos_por_confederacion)} confederaciones")
+    
+    # Procesar cada confederación
+    for confederacion_id in sorted(juegos_por_confederacion.keys()):
+        config = confederaciones_config.get(confederacion_id, {"nombre": f"Conf {confederacion_id}", "dias_entre_jornadas": 7})
+        conf_nombre = config["nombre"]
+        dias_entre_jornadas = config["dias_entre_jornadas"]
+        
+        jornadas_dict = juegos_por_confederacion[confederacion_id]
+        num_jornadas = len(jornadas_dict)
+        
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Confederación: {conf_nombre} (ID: {confederacion_id})")
+        logger.info(f"Jornadas: {num_jornadas}")
+        logger.info(f"Días entre jornadas: {dias_entre_jornadas}")
+        logger.info(f"{'='*60}")
+        
+        # Procesar cada jornada en orden
+        for num_jornada in sorted(jornadas_dict.keys()):
+            juegos_jornada = jornadas_dict[num_jornada]
             
-            # Encontrar el partido que coincida por equipos y grupo
-            for partido_jornada in partidos_jornada:
-                if (juego.get('grupo') == partido_jornada.get('grupo') and
-                    juego.get('equipo_local') == partido_jornada.get('equipo_local') and
-                    juego.get('equipo_visitante') == partido_jornada.get('equipo_visitante')):
-                    
-                    # Sincronizar todos los campos de fecha y hora
-                    juego['fecha'] = partido_jornada['fecha']
-                    juego['hora'] = partido_jornada['hora']
-                    juego['fecha_completa'] = partido_jornada['fecha_completa']
-                    juego['fecha_hora_str'] = partido_jornada['fecha_hora_str']
-                    break
+            # Calcular fecha base para esta jornada
+            if num_jornada == 1:
+                # Jornada 1: fecha inicio ±2 días
+                dias_variacion = random.randint(-2, 2)
+                fecha_base_jornada = fecha_inicio + timedelta(days=dias_variacion)
+            else:
+                # Jornadas siguientes: fecha_inicio + (num_jornada-1) * dias_entre_jornadas ±2 días
+                dias_desde_inicio = (num_jornada - 1) * dias_entre_jornadas
+                dias_variacion = random.randint(-2, 2)
+                fecha_base_jornada = fecha_inicio + timedelta(days=dias_desde_inicio + dias_variacion)
+            
+            logger.info(f"  Jornada {num_jornada}: {fecha_base_jornada.strftime('%Y-%m-%d')} ({len(juegos_jornada)} juegos)")
+            
+            # Asignar fechas y horarios a los juegos de esta jornada
+            asignar_fechas_y_horarios_a_juegos(juegos_jornada, fecha_base_jornada, conf_nombre, logger)
+    
+    # Asignar ubicación a cada juego
+    logger.info(f"\nAsignando ubicaciones...")
+    for juego in resultado_jornadas['juegos']:
         juego['ubicacion'] = ciudad_service.get_ciudad_anfitrion(juego.get("equipo_local", {}).get("id"), logger)
     
-    logger.info(f"Fechas asignadas exitosamente a {resultado_jornadas['total_juegos']} juegos")
+    logger.info(f"\n✅ Fechas asignadas exitosamente a {len(resultado_jornadas['juegos'])} juegos")
     
     return resultado_jornadas
 
-def asignar_fechas_y_horarios_distribuidos(partidos, fecha_base, rango_dias, conf_nombre, logger):
+def asignar_fechas_y_horarios_a_juegos(juegos, fecha_base, conf_nombre, logger):
     """
-    Asigna fechas variables y horarios diferentes a partidos para distribuir la carga.
-    Cada confederación tiene su propio rango de días configurado.
+    Asigna fechas y horarios a los juegos de una jornada.
+    Cada juego obtiene la fecha base ±2 días para distribuir la carga.
     
     Args:
-        partidos: Lista de partidos de una jornada
-        fecha_base: Fecha base (datetime) para los partidos
-        rango_dias: Número de días de rango para distribuir los partidos de esta confederación
-        conf_nombre: Nombre de la confederación para logs
+        juegos: Lista de juegos de la jornada
+        fecha_base: Fecha base (datetime) para la jornada
+        conf_nombre: Nombre de la confederación
         logger: Logger para registrar información
-    
-    Returns:
-        Lista de partidos con fechas y horarios distribuidos
     """
     from datetime import datetime, timedelta
     import random
     
-    # Horarios disponibles para partidos (formato 24h) según la confederación
-    if conf_nombre == "UEFA":
-        # Europa: horarios más tarde por tradición futbolística
-        horarios_base = ["14:00", "16:30", "19:00", "21:30"]
-    elif conf_nombre == "CONMEBOL":
-        # Sudamérica: horarios variados, incluyendo tarde/noche
-        horarios_base = ["15:00", "17:30", "20:00", "22:00"]
-    elif conf_nombre == "CONCACAF":
-        # Norte/Centroamérica: horarios de tarde y noche
-        horarios_base = ["16:00", "18:30", "21:00"]
-    elif conf_nombre == "CAF":
-        # África: horarios durante el día para evitar calor extremo
-        horarios_base = ["10:00", "12:30", "15:00", "17:30", "20:00"]
-    elif conf_nombre == "OFC":
-        # Oceanía: horarios de tarde/noche
-        horarios_base = ["13:00", "15:30", "18:00", "20:30"]
-    elif conf_nombre == "AFC":
-        # Asia: horarios variados por zonas horarias
-        horarios_base = ["11:00", "13:30", "16:00", "18:30", "21:00"]
-    else:
-        # Horarios por defecto
-        horarios_base = ["10:00", "12:30", "15:00", "17:30", "20:00", "22:30"]
+    # Horarios según confederación
+    horarios_por_confederacion = {
+        "UEFA": ["14:00", "16:30", "19:00", "21:30"],
+        "CONMEBOL": ["15:00", "17:30", "20:00", "22:00"],
+        "CONCACAF": ["16:00", "18:30", "21:00"],
+        "CAF": ["10:00", "12:30", "15:00", "17:30", "20:00"],
+        "OFC": ["13:00", "15:30", "18:00", "20:30"],
+        "AFC": ["11:00", "13:30", "16:00", "18:30", "21:00"]
+    }
     
-    # Si hay muchos partidos, expandir horarios
-    if len(partidos) > len(horarios_base):
-        horarios_adicionales = []
-        for i in range(len(horarios_base), len(partidos)):
-            # Agregar horarios cada 2 horas
-            hora_extra = (datetime.strptime("08:00", "%H:%M") + 
-                         timedelta(hours=2 * i)).strftime("%H:%M")
-            horarios_adicionales.append(hora_extra)
-        horarios_base.extend(horarios_adicionales)
+    horarios_base = horarios_por_confederacion.get(conf_nombre, ["10:00", "12:30", "15:00", "17:30", "20:00", "22:30"])
     
-    partidos_distribuidos = []
-    fechas_usadas = {}  # Contador de partidos por fecha
+    # Expandir horarios si hay muchos juegos
+    if len(juegos) > len(horarios_base) * 3:
+        horarios_extra = []
+        for i in range(len(horarios_base), len(juegos)):
+            hora_extra = (datetime.strptime("08:00", "%H:%M") + timedelta(hours=2 * (i % 8))).strftime("%H:%M")
+            horarios_extra.append(hora_extra)
+        horarios_base.extend(horarios_extra)
     
-    logger.info(f"Distribuyendo {len(partidos)} partidos para {conf_nombre} con rango de {rango_dias} días")
+    # Contador de juegos por fecha para distribuir horarios
+    juegos_por_fecha = {}
     
-    for i, partido in enumerate(partidos):
-        # Generar fecha dentro del rango de días configurado para la confederación
-        # Distribución entre 0 y rango_dias (ejemplo: UEFA de 0 a 5 días, CONMEBOL de 0 a 12 días)
-        dias_offset = random.randint(0, rango_dias)
-        fecha_partido = fecha_base + timedelta(days=dias_offset)
-        fecha_str = fecha_partido.strftime("%Y-%m-%d")
+    for juego in juegos:
+        # Aplicar variación de ±2 días a la fecha base
+        dias_variacion = random.randint(-2, 2)
+        fecha_juego = fecha_base + timedelta(days=dias_variacion)
+        fecha_str = fecha_juego.strftime("%Y-%m-%d")
         
-        # Contar cuántos partidos ya están programados para esta fecha
-        if fecha_str not in fechas_usadas:
-            fechas_usadas[fecha_str] = 0
+        # Contar juegos en esta fecha
+        if fecha_str not in juegos_por_fecha:
+            juegos_por_fecha[fecha_str] = 0
         
-        partidos_del_dia = fechas_usadas[fecha_str]
-        
-        # Si ya hay muchos partidos ese día, intentar otra fecha dentro del rango
-        intentos = 0
-        max_partidos_por_dia = 8 if conf_nombre in ["UEFA", "CAF"] else 6  # UEFA y CAF pueden tener más partidos por día
-        
-        while partidos_del_dia >= max_partidos_por_dia and intentos < 15:
-            dias_offset = random.randint(0, rango_dias)
-            fecha_partido = fecha_base + timedelta(days=dias_offset)
-            fecha_str = fecha_partido.strftime("%Y-%m-%d")
-            
-            if fecha_str not in fechas_usadas:
-                fechas_usadas[fecha_str] = 0
-            partidos_del_dia = fechas_usadas[fecha_str]
-            intentos += 1
-        
-        # Asignar horario basado en cuántos partidos ya hay ese día
-        horario_index = partidos_del_dia % len(horarios_base)
+        # Asignar horario según cuántos juegos hay ese día
+        horario_index = juegos_por_fecha[fecha_str] % len(horarios_base)
         horario = horarios_base[horario_index]
         
-        # Crear datetime completo con fecha y hora
-        fecha_hora = datetime.combine(fecha_partido.date(), 
-                                    datetime.strptime(horario, "%H:%M").time())
+        # Crear datetime completo
+        fecha_hora = datetime.combine(fecha_juego.date(), datetime.strptime(horario, "%H:%M").time())
         
-        # Actualizar contador de partidos para esta fecha
-        fechas_usadas[fecha_str] += 1
+        # Actualizar el juego con fecha y hora
+        juego['fecha'] = fecha_str
+        juego['hora'] = horario
+        juego['fecha_completa'] = fecha_hora.isoformat()
+        juego['fecha_hora_str'] = fecha_hora.strftime("%Y-%m-%d %H:%M")
         
-        # Actualizar los campos del partido
-        partido_actualizado = partido.copy()
-        partido_actualizado['fecha'] = fecha_str
-        partido_actualizado['hora'] = horario
-        partido_actualizado['fecha_completa'] = fecha_hora.isoformat()
-        partido_actualizado['fecha_hora_str'] = fecha_hora.strftime("%Y-%m-%d %H:%M")
-        partido_actualizado['dias_offset'] = dias_offset  # Para debugging - días desde la fecha base
-        partido_actualizado['confederacion_nombre'] = conf_nombre  # Para identificación
-        
-        partidos_distribuidos.append(partido_actualizado)
+        # Incrementar contador
+        juegos_por_fecha[fecha_str] += 1
     
-    # Log de resumen de distribución para esta confederación
-    total_fechas_utilizadas = len(fechas_usadas)
-    promedio_partidos_por_fecha = sum(fechas_usadas.values()) / total_fechas_utilizadas if total_fechas_utilizadas > 0 else 0
-    
-    logger.info(f"{conf_nombre}: {len(partidos)} partidos distribuidos en {total_fechas_utilizadas} fechas")
-    logger.info(f"{conf_nombre}: Promedio {promedio_partidos_por_fecha:.1f} partidos por fecha")
-    logger.info(f"{conf_nombre}: Rango utilizado: 0 a {rango_dias} días desde fecha base")
-    
-    return partidos_distribuidos
+    # Log de distribución
+    total_fechas = len(juegos_por_fecha)
+    logger.info(f"    → {len(juegos)} juegos distribuidos en {total_fechas} fechas diferentes")
 
 def obtener_ultima_fecha(confederacion_id, logger):
     """
